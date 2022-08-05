@@ -1,5 +1,6 @@
 const path = require('path');
 const { VueLoaderPlugin } = require("vue-loader");
+const { DefinePlugin } = require('webpack');
 require('babel-polyfill');
 
 module.exports = {
@@ -37,6 +38,10 @@ module.exports = {
         ]
     },
     plugins: [
-        new VueLoaderPlugin()
+        new VueLoaderPlugin(),
+        new DefinePlugin({
+            __VUE_OPTIONS_API__: true,
+            __VUE_PROD_DEVTOOLS__: true,
+        }),
     ]
 };
