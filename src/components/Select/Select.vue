@@ -1,25 +1,24 @@
 <template>
     <div>
         <select class="select" v-model="selectValue">
-            <option v-for="(option, id) in options" :key="id" :value="checkObject ? option.value : option" :disabled="disabled">{{checkObject ? option.label : option}}</option>
+            <option v-for="(option, id) in data.options" :key="id" :value="data.isCheckObject ? option.value : option" :disabled="disabled">{{data.isCheckObject ? option.label : option}}</option>
         </select>
-
 
         <slot name="placeholder" class="label" v-if="$slots.placeholder"></slot>
         <div class="custom-select" :class="{'focus': inputValue, 'active': optionShow}">
             <label v-if="!$slots.placeholder" class="label" id="for">{{placeholder}}</label>
             <input type="text" readonly="readonly" autocomplete="off" class="input" v-model="inputValue" @click="optionShow = !optionShow" :disabled="disabled">
-        
             <div class="icon"></div>
-            <div class="options" v-if="options">
+            <span v-if="data.error" class="error">{{data.error}}</span>
+            <div class="options" v-if="!data.error && data.options">
                 <ul>
-                    <template v-if="checkObject">
-                        <li v-for="(item, idx) in options" :key="idx" @click="selectOption(item.label, item.value), changeFn()">
+                    <template v-if="data.isCheckObject">
+                        <li v-for="(item, idx) in data.options" :key="idx" @click="selectOption(item.label, item.value), changeFn()">
                             {{item.label}}
                         </li>
                     </template>
                     <template v-else>
-                        <li  v-for="(item, idx) in options" :key="idx" @click="selectOption(item), changeFn()">
+                        <li  v-for="(item, idx) in data.options" :key="idx" @click="selectOption(item), changeFn()">
                             {{item}}
                         </li>
                     </template>
@@ -34,57 +33,88 @@ export default {
     data() {
         return {
             optionShow: false,
-            checkObject: false,
+            data: {},
             inputValue: null,
-            // selectValue: null
-        }
-    },
-    computed: {
-        selectValue() {
-            let value = "";
-            if (this.checkObject) {
-                this.options.forEach(item => item.label == this.inputValue ? value = item.value : null);
-            }
-            return this.checkObject ? value : this.inputValue;
         }
     },
     props: {
         modelValue: String,
-        options: Array,
+        options: [Array, Object],
         placeholder: {type: String, default: null},
         disabled: {type: Boolean, default: false},
     },
     mounted() {
-        if(this.modelValue) {
+        this.dataColection();
+
+        if (this.modelValue) {
             this.inputValue = this.modelValue
-            let label = '';
-            this.options.forEach(item => item.value == this.inputValue ? label = item.label : null)
+            let label = "";
+            this.data.options.forEach(item => item.value == this.inputValue ? label = item.label : null)
             this.selectOption(label ? label : this.inputValue, this.inputValue)
         }
 
-        document.addEventListener('mousedown', e => {
-            if(!e.target.closest(".db_select")) {
+        document.addEventListener("mousedown", e => {
+            if (!e.target.closest(".db_select")) {
                 this.optionShow = false;
             }
         });
-
-        let arrType = this.options.map(i=>i.constructor.name); // собираю все типы
-        let arr = arrType.filter((item, index) => arrType.indexOf(item) === index); //убираю дубликаты, если значение одно и оно Object
-        this.checkObject = arr.length == 1 && arr[0] == 'Object';
+    },
+    computed: {
+        selectValue() {
+            let value = "";
+            if (this.data.isCheckObject) {
+                this.data.options.forEach(item => item.label == this.inputValue ? value = item.value : null);
+            }
+            return this.data.isCheckObject ? value : this.inputValue;
+        }
     },
     methods: {
+        dataColection() {
+            if (this.options) {
+                let type = this.options.constructor.name;
+
+                if (type == "Array") {
+                    this.data.options = this.options;
+                    this.data.isCheckObject = this.checkObject();
+                } else if (type == "Object") {
+                    this.data.options = Object.values(this.options);
+                    this.data.isCheckObject = this.checkObject();
+                    
+                    //преобразование к значениям label value
+                    if (this.data.isCheckObject) {
+                        this.data.options = this.data.options.map(option => {
+                            let values = Object.values(option);
+                            return {label: values[0], value: values[1]}
+                        })
+                    }
+                } else {
+                    this.data.error = "Неверный формат";
+                }
+            } else {
+                this.data.error = "Данные отсутсвуют";
+            }
+        },
+        checkObject() {
+            let arrType = this.data.options.map(i=>i.constructor.name); // собираю все типы
+            let arr = arrType.filter((item, index) => arrType.indexOf(item) === index); //убираю дубликаты, если значение одно и оно Object
+
+            if (arr.length == 1 && arr[0] == "Object" || arr.length == 1 && arr[0] == "String") {
+                return arr.length == 1 && arr[0] == "Object";
+            } else {
+                this.data.error = "Неверный формат";
+            }
+        },
         changeFn() {
-            this.$emit('change');
+            this.$emit("change");
         },
         selectOption(label, value) {
-            if(!value) {
-                this.$emit('update:modelValue', label)
+            if (!value) {
+                this.$emit("update:modelValue", label)
             } else {
-                this.$emit('update:modelValue', value)
+                this.$emit("update:modelValue", value)
             }
             this.optionShow = false;
             this.inputValue = label;
-            // this.selectValue = this.checkObject ? value : label;
         },
     }
 }
@@ -95,8 +125,7 @@ export default {
     box-sizing: border-box;
 }
 .select {
-    // display: none;
-    margin-bottom: 10px;
+    display: none;
 }
 
 .custom-select {
@@ -113,6 +142,15 @@ export default {
         cursor: pointer;
     }
 
+    .error {
+        position: absolute;
+        left: 0;
+        bottom: -15px;
+        width: 100%;
+        font-size: 13px;
+        color: #ff4646;
+    }
+
     .icon {
         position: absolute;
         width: 20px;
@@ -124,7 +162,7 @@ export default {
         pointer-events: none;
 
         &:after {
-            content: '';
+            content: "";
             position: absolute;
             display: block;
             background-color: #d1d0d0;
@@ -136,7 +174,7 @@ export default {
         }
 
         &:before {
-            content: '';
+            content: "";
             position: absolute;
             display: block;
             background-color: #d1d0d0;
@@ -202,9 +240,12 @@ export default {
     }
 
     &.active {
+        .input {
+            border-color: #afafff;
+        }
         .label {
             position: absolute;
-            color: blue;
+            color: #afafff;
             top: 9px;
             font-size: 12px;
             left: 15px;
@@ -221,7 +262,7 @@ export default {
     &.focus {
         .label {
             position: absolute;
-            color: blue;
+            color: #afafff;
             top: 9px;
             font-size: 12px;
             left: 15px;
