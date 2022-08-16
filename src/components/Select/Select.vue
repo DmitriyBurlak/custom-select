@@ -1,24 +1,24 @@
 <template>
-    <div>
-        <select class="select" v-model="selectValue">
+    <div class="db_select">
+        <select class="select" v-model="inputValue">
             <option v-for="(option, id) in data.options" :key="id" :value="data.isCheckObject ? option.value : option" :disabled="disabled">{{data.isCheckObject ? option.label : option}}</option>
         </select>
 
-        <slot name="placeholder" class="label" v-if="$slots.placeholder"></slot>
         <div class="custom-select" :class="{'focus': inputValue, 'active': optionShow}">
-            <label v-if="!$slots.placeholder" class="label" id="for">{{placeholder}}</label>
-            <input type="text" readonly="readonly" autocomplete="off" class="input" v-model="inputValue" @click="optionShow = !optionShow" :disabled="disabled">
+            <label class="label" for="cus-input">{{placeholder}}</label>
+            <input type="text" id="cus-input" readonly="readonly" autocomplete="off" class="input" v-model="valueInput" @click="optionShow = !optionShow" :disabled="disabled">
+            
             <div class="icon"></div>
             <span v-if="data.error" class="error">{{data.error}}</span>
             <div class="options" v-if="!data.error && data.options">
                 <ul>
                     <template v-if="data.isCheckObject">
-                        <li v-for="(item, idx) in data.options" :key="idx" @click="selectOption(item.label, item.value), changeFn()">
+                        <li v-for="(item, idx) in data.options" :key="idx" @click="setInputValue(item.value)">  
                             {{item.label}}
                         </li>
                     </template>
                     <template v-else>
-                        <li  v-for="(item, idx) in data.options" :key="idx" @click="selectOption(item), changeFn()">
+                        <li  v-for="(item, idx) in data.options" :key="idx" @click="setInputValue(item)">
                             {{item}}
                         </li>
                     </template>
@@ -32,8 +32,8 @@
 export default {
     data() {
         return {
-            optionShow: false,
             data: {},
+            optionShow: false,
             inputValue: null,
         }
     },
@@ -43,30 +43,30 @@ export default {
         placeholder: {type: String, default: null},
         disabled: {type: Boolean, default: false},
     },
+    watch: {
+        inputValue(newVal) {
+            this.changeFn();
+            this.selectOption(newVal);
+        }
+    },
+    computed: {
+        valueInput() {
+            let value = "";
+            if (this.data.isCheckObject) {
+                this.data.options.forEach(item => item.value == this.inputValue ? value = item.label : null);
+            }
+            return this.data.isCheckObject ? value : this.inputValue;
+        },
+    },
     mounted() {
         this.dataColection();
-
-        if (this.modelValue) {
-            this.inputValue = this.modelValue
-            let label = "";
-            this.data.options.forEach(item => item.value == this.inputValue ? label = item.label : null)
-            this.selectOption(label ? label : this.inputValue, this.inputValue)
-        }
+        this.modelValue && (this.inputValue = this.modelValue);
 
         document.addEventListener("mousedown", e => {
-            if (!e.target.closest(".db_select")) {
+            if (!e.target.closest(".custom-select")) {
                 this.optionShow = false;
             }
         });
-    },
-    computed: {
-        selectValue() {
-            let value = "";
-            if (this.data.isCheckObject) {
-                this.data.options.forEach(item => item.label == this.inputValue ? value = item.value : null);
-            }
-            return this.data.isCheckObject ? value : this.inputValue;
-        }
     },
     methods: {
         dataColection() {
@@ -104,17 +104,15 @@ export default {
                 this.data.error = "Неверный формат";
             }
         },
+        setInputValue(value) {
+            this.inputValue = value;
+            this.optionShow = false;
+        },
         changeFn() {
             this.$emit("change");
         },
-        selectOption(label, value) {
-            if (!value) {
-                this.$emit("update:modelValue", label)
-            } else {
-                this.$emit("update:modelValue", value)
-            }
-            this.optionShow = false;
-            this.inputValue = label;
+        selectOption(value) {
+            this.$emit("update:modelValue", value)
         },
     }
 }
@@ -125,7 +123,7 @@ export default {
     box-sizing: border-box;
 }
 .select {
-    display: none;
+    // display: none;
 }
 
 .custom-select {
@@ -189,7 +187,7 @@ export default {
         position: absolute;
         width: 100%;
         margin-top: 3px;
-        z-index: 999;
+        z-index: 9999;
         transform-origin: center bottom;
         transform: scale3d(0,0,1);
         transition: transform .36s cubic-bezier(.4,0,.2,1);

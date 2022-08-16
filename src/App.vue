@@ -1,29 +1,32 @@
 <template>
     <h1 class="title">{{title}}</h1>
 
-    <div class="info">Входные данные масив - {{data}}</div>
+    <div class="info">Входные данные - {{data}}</div>
     <div class="block">
         <Select :options="data" v-model="valueSelect" placeholder="Выберите значение">
             <template v-slot:placeholder>
                 <div>Выберите значение</div>
             </template>
+            <template v-slot:options>
+                <div>{{slotProps}}</div>
+            </template>
         </Select>
         <span class="value">значение: {{valueSelect ? valueSelect : "Выберите значение"}}</span>
     </div>
 
-    <div class="info">Входные данные масив - {{data2}}</div>
+    <div class="info">Входные данные - {{data2}}</div>
     <div class="block">
         <Select :options="data2" v-model="valueSelect2" placeholder="Выберите значение" />
         <span class="value">значение: {{valueSelect2 ? valueSelect2 : "Выберите значение"}}</span>
     </div>
 
-    <div class="info">Входные данные масив - {{data3}}</div>
+    <div class="info">Входные данные - {{data3}}</div>
     <div class="block">
-        <Select :options="data3" v-model="valueSelect3" placeholder="Выберите значение"></Select>
+        <Select :options="data3" v-model="valueSelect3" placeholder="Выберите значение" @change="test"></Select>
         <span class="value">значение: {{valueSelect3 ? valueSelect3 : "Выберите значение"}}</span>
     </div>
 
-    <div class="info">Входные данные масив - {{data4}}</div>
+    <div class="info">Входные данные - {{data4}}</div>
     <div class="block">
         <Select :options="data4" v-model="valueSelect4" placeholder="Выберите значение"></Select>
         <span class="value">значение: {{valueSelect4 ? valueSelect4 : "Выберите значение"}}</span>
@@ -47,6 +50,11 @@ export default {
             valueSelect4: "",
         }
     },
+    methods: {
+        test() {
+            console.log('change test');
+        }
+    }
 }
 </script>
 
@@ -56,6 +64,7 @@ export default {
     }
     .info {
         padding-top: 10px;
+        font-size: 12px;
         color: #9f9393;
         font-style: italic;
     }
